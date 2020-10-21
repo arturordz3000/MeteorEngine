@@ -17,6 +17,10 @@ const std::vector<const char*> validationLayers = {
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
+
+    bool isComplete() {
+        return graphicsFamily.has_value();
+    }
 };
 
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
@@ -28,22 +32,25 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+
+        if (indices.isComplete())
+            break;
+
+        i++;
+    }
+
     return indices;
 }
 
 bool isDeviceSuitable(VkPhysicalDevice device) {
-    VkPhysicalDeviceProperties deviceProperties;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    QueueFamilyIndices indices = findQueueFamilies(device);
 
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-    // Dedicated graphics card with geometry shader support
-    /*return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-        deviceFeatures.geometryShader;*/
-
-        // or just return any gpu
-    return true;
+    return indices.isComplete();
 }
 
 #ifdef NDEBUG
